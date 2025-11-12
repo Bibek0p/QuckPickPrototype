@@ -688,6 +688,95 @@ router.post('/estimate', async (req, res, next) => {
 });
 
 /**
+ * POST /api/sos/create
+ * Create SOS emergency alert
+ */
+router.post('/create', authenticate, async (req, res, next) => {
+  try {
+    const { rideId, location, emergency = true } = req.body;
+
+    // Validate required fields
+    if (!rideId || !location || !location.latitude || !location.longitude) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'rideId and location (latitude, longitude) are required'
+      });
+    }
+
+    // Validate coordinates
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid coordinates'
+      });
+    }
+
+    // Verify ride exists and user has access
+    const rideDoc = await db.collection('rides').doc(rideId).get();
+    if (!rideDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        error: 'Ride not found'
+      });
+    }
+
+    const rideData = rideDoc.data();
+
+    // Check if user has access to this ride
+    const hasAccess = rideData.userId === req.user.uid ||
+                     rideData.driverId === req.user.uid;
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to create SOS for this ride'
+      });
+    }
+
+    // Create SOS alert document
+    const sosData = {
+      rideId,
+      userId: req.user.uid,
+      location: {
+        latitude: lat,
+        longitude: lng,
+        timestamp: FieldValue.serverTimestamp()
+      },
+      emergency,
+      status: 'active',
+      createdAt: FieldValue.serverTimestamp(),
+      rideData: {
+        pickup: rideData.pickup,
+        destination: rideData.destination,
+        driverId: rideData.driverId,
+        userId: rideData.userId,
+        status: rideData.status
+      }
+    };
+
+    const sosRef = await db.collection('sos_alerts').add(sosData);
+    const sosDoc = await sosRef.get();
+
+    // Log the SOS alert creation
+    logger.warn(`SOS alert created: ${sosRef.id} by user ${req.user.uid} for ride ${rideId}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'SOS alert created successfully',
+      alertId: sosRef.id,
+      timestamp: sosDoc.data().createdAt
+    });
+  } catch (error) {
+    logger.error('Error creating SOS alert:', error);
+    next(error);
+  }
+});
+
+/**
  * Helper function to calculate distance between two coordinates
  */
 function calculateDistance(lat1, lon1, lat2, lon2) {
