@@ -13,6 +13,7 @@ import TripHistoryScreen from '../screens/app/TripHistoryScreen';
 import RideTrackingScreen from '../screens/app/RideTrackingScreen';
 import DeliveryWizardScreen from '../screens/app/DeliveryWizardScreen';
 import DriverRegistrationScreen from '../screens/app/DriverRegistrationScreen';
+import DeliveryTrackingScreen from '../screens/app/DeliveryTrackingScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
