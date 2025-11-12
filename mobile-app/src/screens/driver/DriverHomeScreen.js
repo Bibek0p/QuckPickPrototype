@@ -490,6 +490,83 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  // Job Feed Styles
+  jobFeedContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    maxHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  jobFeedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  jobScrollView: {
+    flexDirection: 'row',
+  },
+  jobCard: {
+    width: 200,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  jobType: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  jobDistance: {
+    fontSize: 12,
+    color: '#666',
+  },
+  jobFare: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginBottom: 8,
+  },
+  jobPickup: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  jobDestination: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 12,
+  },
+  acceptButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  acceptButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 });
 
 export default DriverHomeScreen;
