@@ -588,6 +588,132 @@ router.get('/profile', authenticate, async (req, res, next) => {
 });
 
 /**
+ * GET /api/drivers/pending-jobs
+ * Get pending ride and delivery requests for online drivers
+ */
+router.get('/pending-jobs', authenticate, async (req, res, next) => {
+  try {
+    // Check if user is a verified driver
+    if (req.user.role !== 'driver') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'Only drivers can view pending jobs'
+      });
+    }
+
+    // Check driver verification status
+    const driverDoc = await db.collection('drivers').doc(req.user.uid).get();
+    if (!driverDoc.exists || driverDoc.data().verificationStatus !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        error: 'Driver not verified',
+        message: 'Only verified drivers can view pending jobs'
+      });
+    }
+
+    const driverData = driverDoc.data();
+    if (!driverData.currentLocation) {
+      return res.status(400).json({
+        success: false,
+        error: 'Location not available',
+        message: 'Driver location is not available. Please update your location.'
+      });
+    }
+
+    const driverLocation = driverData.currentLocation;
+    const searchRadius = 10; // 10km radius
+
+    // Get pending rides
+    const ridesQuery = await db.collection('rides')
+      .where('status', '==', 'requested')
+      .get();
+
+    // Get pending deliveries
+    const deliveriesQuery = await db.collection('deliveries')
+      .where('status', '==', 'requested')
+      .get();
+
+    const pendingJobs = [];
+
+    // Process rides
+    ridesQuery.forEach(doc => {
+      const rideData = doc.data();
+      const distance = calculateDistance(
+        driverLocation.latitude,
+        driverLocation.longitude,
+        rideData.pickup.latitude,
+        rideData.pickup.longitude
+      );
+
+      if (distance <= searchRadius) {
+        pendingJobs.push({
+          id: doc.id,
+          type: 'ride',
+          pickup: {
+            latitude: rideData.pickup.latitude,
+            longitude: rideData.pickup.longitude,
+            address: rideData.pickup.address
+          },
+          destination: {
+            latitude: rideData.destination.latitude,
+            longitude: rideData.destination.longitude,
+            address: rideData.destination.address
+          },
+          fare: rideData.fare,
+          distance: Math.round(distance * 100) / 100,
+          vehicleType: rideData.vehicleType,
+          createdAt: rideData.createdAt
+        });
+      }
+    });
+
+    // Process deliveries
+    deliveriesQuery.forEach(doc => {
+      const deliveryData = doc.data();
+      const distance = calculateDistance(
+        driverLocation.latitude,
+        driverLocation.longitude,
+        deliveryData.pickup.latitude,
+        deliveryData.pickup.longitude
+      );
+
+      if (distance <= searchRadius) {
+        pendingJobs.push({
+          id: doc.id,
+          type: 'delivery',
+          pickup: {
+            latitude: deliveryData.pickup.latitude,
+            longitude: deliveryData.pickup.longitude,
+            address: deliveryData.pickup.address
+          },
+          destination: {
+            latitude: deliveryData.destination.latitude,
+            longitude: deliveryData.destination.longitude,
+            address: deliveryData.destination.address
+          },
+          fare: deliveryData.fare,
+          distance: Math.round(distance * 100) / 100,
+          packageType: deliveryData.packageType,
+          createdAt: deliveryData.createdAt
+        });
+      }
+    });
+
+    // Sort by distance
+    pendingJobs.sort((a, b) => a.distance - b.distance);
+
+    res.status(200).json({
+      success: true,
+      jobs: pendingJobs
+    });
+  } catch (error) {
+    logger.error('Error fetching pending jobs:', error);
+    next(error);
+  }
+});
+
+/**
  * Helper function to calculate distance between two coordinates
  */
 function calculateDistance(lat1, lon1, lat2, lon2) {
