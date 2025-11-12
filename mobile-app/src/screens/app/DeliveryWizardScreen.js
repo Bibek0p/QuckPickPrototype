@@ -56,30 +56,31 @@ const DeliveryWizardScreen = ({ route, navigation }) => {
 
   const calculateDeliveryFee = async () => {
     try {
-      // Simple distance calculation using Haversine formula
-      const R = 3959; // Earth's radius in miles
-      const dLat = (destination.latitude - pickup.latitude) * Math.PI / 180;
-      const dLon = (destination.longitude - pickup.longitude) * Math.PI / 180;
-      const a =
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(pickup.latitude * Math.PI / 180) * Math.cos(destination.latitude * Math.PI / 180) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      const distance = R * c;
-      const distanceKm = distance * 1.60934; // Convert to km
+      const response = await api.post('/deliveries/estimate', {
+        pickup: {
+          latitude: pickup.latitude,
+          longitude: pickup.longitude
+        },
+        destination: {
+          latitude: destination.latitude,
+          longitude: destination.longitude
+        },
+        packageType: packageType.toLowerCase()
+      });
 
-      // Simple fare calculation (in production, this would be server-side)
-      const baseFare = 50;
-      const distanceFare = Math.round(distanceKm * 15);
-      const timeFare = Math.round(distanceKm * 5); // Assuming 30 km/h average
-      const totalFare = baseFare + distanceFare + timeFare;
-
-      setDeliveryFee(totalFare);
-      setEstimatedTime(Math.round(distanceKm * 2)); // Rough time estimate in minutes
+      if (response.data.success) {
+        setDeliveryFee(response.data.estimate.fare);
+        setEstimatedTime(response.data.estimate.duration);
+      } else {
+        // Fallback to default values
+        setDeliveryFee(100);
+        setEstimatedTime(30);
+      }
     } catch (error) {
-      console.error('Error calculating fee:', error);
-      setDeliveryFee(100); // Default fare
-      setEstimatedTime(30); // Default time
+      console.error('Error calculating delivery fee:', error);
+      // Fallback to default values
+      setDeliveryFee(100);
+      setEstimatedTime(30);
     }
   };
 
