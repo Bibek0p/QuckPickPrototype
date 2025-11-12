@@ -171,6 +171,34 @@ const DriverHomeScreen = ({ navigation }) => {
     };
   }, [isOnline, currentLocation]);
 
+  // Fetch pending jobs when online
+  useEffect(() => {
+    let jobFetchInterval;
+
+    if (isOnline && currentLocation) {
+      const fetchJobs = async () => {
+        try {
+          setIsFetchingJobs(true);
+          const response = await api.get('/drivers/pending-jobs');
+          setPendingJobs(response.data.jobs || []);
+        } catch (error) {
+          console.error('Error fetching jobs:', error);
+        } finally {
+          setIsFetchingJobs(false);
+        }
+      };
+
+      fetchJobs(); // Initial fetch
+      jobFetchInterval = setInterval(fetchJobs, 10000); // Fetch every 10 seconds
+    }
+
+    return () => {
+      if (jobFetchInterval) {
+        clearInterval(jobFetchInterval);
+      }
+    };
+  }, [isOnline, currentLocation]);
+
   // Toggle driver availability
   const toggleAvailability = async () => {
     if (!currentLocation) {
