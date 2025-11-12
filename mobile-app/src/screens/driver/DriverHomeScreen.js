@@ -20,12 +20,14 @@ import Geolocation from '@react-native-community/geolocation';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../config/api';
 
-const DriverHomeScreen = () => {
+const DriverHomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [toggleLoading, setToggleLoading] = useState(false);
+  const [pendingJobs, setPendingJobs] = useState([]);
+  const [isFetchingJobs, setIsFetchingJobs] = useState(false);
   const [region, setRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
