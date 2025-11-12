@@ -210,8 +210,7 @@ const DriverHomeScreen = ({ navigation }) => {
       setToggleLoading(true);
 
       await api.put('/drivers/availability', {
-        available: !isOnline,
-        location: currentLocation
+        isOnline: !isOnline
       });
 
       setIsOnline(!isOnline);
@@ -223,6 +222,41 @@ const DriverHomeScreen = ({ navigation }) => {
       Alert.alert('Error', 'Failed to update availability. Please try again.');
     } finally {
       setToggleLoading(false);
+    }
+  };
+
+  const handleAcceptJob = async (job) => {
+    try {
+      let response;
+
+      if (job.type === 'ride') {
+        response = await api.put(`/rides/${job.id}/accept`);
+      } else if (job.type === 'delivery') {
+        response = await api.put(`/deliveries/${job.id}/accept`);
+      }
+
+      Alert.alert(
+        'Job Accepted!',
+        `You've accepted a ${job.type}. Navigate to tracking screen.`,
+        [
+          {
+            text: 'Track Job',
+            onPress: () => {
+              // Navigate to appropriate tracking screen
+              if (job.type === 'ride') {
+                navigation.navigate('RideTracking', { rideId: job.id });
+              } else {
+                navigation.navigate('DeliveryTracking', { deliveryId: job.id });
+              }
+            }
+          }
+        ]
+      );
+
+      // Clear jobs and stop fetching
+      setPendingJobs([]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to accept job. Please try again.');
     }
   };
 
