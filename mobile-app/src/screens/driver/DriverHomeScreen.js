@@ -322,6 +322,48 @@ const DriverHomeScreen = ({ navigation }) => {
         )}
       </MapView>
 
+      {/* Job Feed - Only visible when online and jobs available */}
+      {isOnline && pendingJobs.length > 0 && (
+        <View style={styles.jobFeedContainer}>
+          <Text style={styles.jobFeedTitle}>Available Jobs</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.jobScrollView}
+          >
+            {pendingJobs.map((job) => (
+              <View key={job.id} style={styles.jobCard}>
+                <View style={styles.jobHeader}>
+                  <Text style={styles.jobType}>
+                    {job.type === 'ride' ? '🚗 Ride' : '📦 Delivery'}
+                  </Text>
+                  <Text style={styles.jobDistance}>{job.distance} km</Text>
+                </View>
+
+                <Text style={styles.jobFare}>₹{job.fare}</Text>
+
+                <Text style={styles.jobPickup} numberOfLines={1}>
+                  📍 {job.pickup.address}
+                </Text>
+
+                {job.destination && (
+                  <Text style={styles.jobDestination} numberOfLines={1}>
+                    🎯 {job.destination.address}
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  style={styles.acceptButton}
+                  onPress={() => handleAcceptJob(job)}
+                >
+                  <Text style={styles.acceptButtonText}>Accept</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Footer with Stats */}
       <View style={styles.footer}>
         <View style={styles.statItem}>
