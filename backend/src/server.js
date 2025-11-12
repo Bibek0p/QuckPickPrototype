@@ -36,6 +36,7 @@ app.use('/api/rides', require('./routes/rides'));
 app.use('/api/deliveries', require('./routes/deliveries'));
 app.use('/api/drivers', require('./routes/drivers'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/sos', require('./routes/rides')); // SOS endpoint is in rides.js
 
 // 404 handler
 app.use((req, res) => {
