@@ -672,6 +672,97 @@ router.get('/my-history', authenticate, async (req, res, next) => {
 });
 
 /**
+ * POST /api/deliveries/estimate
+ * Calculate delivery fare estimate securely on server
+ */
+router.post('/estimate', async (req, res, next) => {
+  try {
+    const { pickup, destination, packageType = 'document' } = req.body;
+
+    // Validate coordinates
+    if (!pickup || !destination ||
+        !pickup.latitude || !pickup.longitude ||
+        !destination.latitude || !destination.longitude) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid coordinates',
+        message: 'Both pickup and destination must have valid latitude and longitude'
+      });
+    }
+
+    // Validate package type
+    const validPackageTypes = ['document', 'package', 'food', 'electronics', 'other'];
+    if (!validPackageTypes.includes(packageType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid package type',
+        message: 'Package type must be one of: document, package, food, electronics, other'
+      });
+    }
+
+    // Calculate distance using Haversine formula
+    const distance = calculateDistance(
+      pickup.latitude, pickup.longitude,
+      destination.latitude, destination.longitude
+    );
+
+    // Base fare calculation by package type (in INR)
+    const baseFares = {
+      document: { base: 40, perKm: 10, perMinute: 1.5 },
+      package: { base: 60, perKm: 12, perMinute: 2 },
+      food: { base: 50, perKm: 11, perMinute: 1.8 },
+      electronics: { base: 80, perKm: 15, perMinute: 2.5 },
+      other: { base: 55, perKm: 13, perMinute: 2.2 }
+    };
+
+    const pricing = baseFares[packageType];
+    if (!pricing) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid package type',
+        message: 'Pricing not available for this package type'
+      });
+    }
+
+    // Estimate duration (simplified: average speed = 25 km/h in city for deliveries)
+    const estimatedMinutes = Math.round((distance / 25) * 60);
+
+    // Calculate total fare
+    const distanceFare = distance * pricing.perKm;
+    const timeFare = estimatedMinutes * pricing.perMinute;
+    const totalFare = pricing.base + distanceFare + timeFare;
+
+    // Apply service fee (15%)
+    const serviceFee = totalFare * 0.15;
+    const finalFare = totalFare + serviceFee;
+
+    // Round to nearest integer
+    const roundedFare = Math.round(finalFare);
+
+    res.status(200).json({
+      success: true,
+      estimate: {
+        fare: roundedFare,
+        distance: Math.round(distance * 100) / 100,
+        duration: estimatedMinutes,
+        breakdown: {
+          base: pricing.base,
+          distance: Math.round(distanceFare),
+          time: Math.round(timeFare),
+          serviceFee: Math.round(serviceFee)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating delivery fare estimate:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to calculate fare estimate'
+    });
+  }
+});
+
+/**
  * Helper function to calculate distance between two coordinates
  */
 function calculateDistance(lat1, lon1, lat2, lon2) {
