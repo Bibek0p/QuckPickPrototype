@@ -165,7 +165,7 @@ const DeliveryWizardScreen = ({ route, navigation }) => {
           {
             text: 'Track Delivery',
             onPress: () => navigation.navigate('DeliveryTracking', {
-              deliveryId: response.id || 'mock_delivery_id'
+              deliveryId: response.data.delivery.id || 'mock_delivery_id'
             })
           },
           {
